@@ -100,6 +100,9 @@ These features are **planned but not implemented** in the current version.
 🔄 Ongoing improvements planned  
 
 ---
+## 🔗 Live Demo
+
+👉 https://samson4321.github.io/hyperspectral-medical-imaging-explorer/
 
 ## 📌 Disclaimer
 
