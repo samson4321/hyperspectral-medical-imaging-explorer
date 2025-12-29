@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hyperspectral Imaging in Medicine - Interactive Interface</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(
+          135deg,
+          #1e3c72 0%,
+          #2a5298 50%,
+          #667eea 100%
+        );
+        min-height: 100vh;
+        color: #333;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 25% 25%,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 75% 75%,
+            rgba(255, 255, 255, 0.05) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .subtitle {
+        font-size: 1.2em;
+        opacity: 0.9;
+        margin-bottom: 25px;
+      }
+
+      .intro-section {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .intro-text {
+        font-size: 1.1em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      .search-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .search-input {
+        flex: 1;
+        min-width: 300px;
+        padding: 12px 15px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.9);
+        font-size: 1em;
+        transition: all 0.3s ease;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        background: white;
+      }
+
+      .search-button,
+      .clear-button {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .search-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .search-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .clear-button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .clear-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .filter-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .filter-section select {
+        padding: 8px 15px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        font-size: 0.9em;
+        cursor: pointer;
+      }
+
+      .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.9em;
+        pointer-events: none;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        max-width: 200px;
+      }
+
+      .tooltip.show {
+        opacity: 1;
+      }
+
+      .search-results-info {
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        color: #2d3748;
+        font-weight: bold;
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+      }
+
+      .highlight {
+        background: yellow;
+        font-weight: bold;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .human-body-section,
+      .literature-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15),
+          0 0 0 1px rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .section-title {
+        font-size: 1.6em;
+        margin-bottom: 25px;
+        color: #2d3748;
+        border-bottom: 4px solid #667eea;
+        padding-bottom: 12px;
+        text-align: center;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .human-body-container {
+        position: relative;
+        text-align: center;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(102, 126, 234, 0.05) 0%,
+          transparent 70%
+        );
+        border-radius: 15px;
+        padding: 20px;
+        border: 2px dashed rgba(102, 126, 234, 0.3);
+      }
+
+      .human-body-svg {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+      }
+
+      .body-part {
+        cursor: pointer;
+        transition: all 0.4s ease;
+        filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+      }
+
+      .body-part:hover {
+        fill: #667eea;
+        opacity: 0.9;
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6))
+          drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+        stroke: #ffffff;
+        stroke-width: 3;
+      }
+
+      .body-part.selected {
+        fill: #e74c3c;
+        stroke: #ffffff;
+        stroke-width: 4;
+        filter: drop-shadow(0 0 20px rgba(231, 76, 60, 0.8))
+          drop-shadow(2px 2px 6px rgba(0, 0, 0, 0.4));
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .selected-region {
+        margin-top: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+      }
+
+      .literature-list {
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .anatomical-category {
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .category-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+      }
+
+      .category-header:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+      }
+
+      .category-content {
+        display: none;
+        padding: 20px;
+        background: #f8fafc;
+      }
+
+      .category-content.active {
+        display: block;
+      }
+
+      .paper-card {
+        background: white;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+      }
+
+      .paper-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      .paper-title {
+        font-weight: bold;
+        color: #2d3748;
+        margin-bottom: 8px;
+        font-size: 1.1em;
+      }
+
+      .paper-source {
+        color: #667eea;
+        font-size: 0.9em;
+        margin-bottom: 8px;
+      }
+
+      .paper-abstract {
+        color: #4a5568;
+        font-size: 0.95em;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        font-style: italic;
+      }
+      
+      .paper-summary {
+        color: #2d3748;
+        font-size: 0.95em;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        background-color: #f0f4f8;
+        padding: 8px;
+        border-radius: 4px;
+      }
+      
+      .paper-link {
+        display: inline-block;
+        margin-top: 8px;
+        color: #667eea;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      
+      .paper-link:hover {
+        text-decoration: underline;
+      }
+
+      .stats-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-top: 30px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+      }
+
+      .stat-card {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 10px;
+        color: white;
+      }
+
+      .stat-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .stat-label {
+        font-size: 1.1em;
+      }
+
+      .expand-icon {
+        transition: transform 0.3s ease;
+      }
+
+      .expand-icon.rotated {
+        transform: rotate(180deg);
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Hyperspectral Imaging in Medicine</h1>
+        <p class="subtitle">
+          Interactive Literature Review and Anatomical Region Explorer
+        </p>
+        <div class="intro-section">
+          <p class="intro-text">
+            Hyperspectral imaging (HSI) is revolutionizing medical diagnostics
+            by capturing detailed spectral information across hundreds of
+            wavelengths. This non-invasive technology enables precise tissue
+            characterization, early disease detection, and surgical guidance
+            across multiple medical specialties.
+          </p>
+          <div class="search-container">
+            <input
+              type="text"
+              id="searchBox"
+              placeholder="Search papers by keywords, authors, or medical conditions..."
+              class="search-input"
+            />
+            <button onclick="performSearch()" class="search-button">
+              🔍 Search
+            </button>
+            <button onclick="clearSearch()" class="clear-button">Clear</button>
+          </div>
+          <div class="filter-section">
+            <label>Filter by Region:</label>
+            <select id="regionFilter" onchange="filterByRegion()">
+              <option value="all">All Regions</option>
+              <option value="neurological">Neurological</option>
+              <option value="ophthalmology">Ophthalmology</option>
+              <option value="dermatology">Dermatology</option>
+              <option value="cardiovascular">Cardiovascular</option>
+              <option value="pulmonary">Pulmonary</option>
+              <option value="gastrointestinal">Gastrointestinal</option>
+              <option value="gynecological">Gynecological</option>
+              <option value="orthopedic">Orthopedic</option>
+              <option value="head-neck">Head & Neck</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-content">
+        <div class="human-body-section">
+          <h2 class="section-title">Select Anatomical Region</h2>
+          <div class="human-body-container">
+            <svg
+              class="human-body-svg"
+              viewBox="0 0 300 600"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <!-- Background silhouette -->
+              <defs>
+                <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
+                  <stop
+                    offset="0%"
+                    style="stop-color: #e8e8e8; stop-opacity: 1"
+                  />
+                  <stop
+                    offset="100%"
+                    style="stop-color: #d0d0d0; stop-opacity: 1"
+                  />
+                </radialGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                  <feMerge>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <!-- Head -->
+              <ellipse
+                cx="150"
+                cy="60"
+                rx="45"
+                ry="50"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="neurological"
+                stroke="#999"
+                stroke-width="2"
+                filter="url(#glow)"
+              />
+              <text
+                x="150"
+                y="65"
+                text-anchor="middle"
+                font-size="10"
+                fill="#333"
+              >
+                Brain
+              </text>
+
+              <!-- Eyes -->
+              <circle
+                cx="135"
+                cy="50"
+                r="6"
+                fill="#4a90e2"
+                class="body-part"
+                data-region="ophthalmology"
+                stroke="#fff"
+                stroke-width="2"
+              />
+              <circle
+                cx="165"
+                cy="50"
+                r="6"
+                fill="#4a90e2"
+                class="body-part"
+                data-region="ophthalmology"
+                stroke="#fff"
+                stroke-width="2"
+              />
+              <text
+                x="150"
+                y="40"
+                text-anchor="middle"
+                font-size="8"
+                fill="#333"
+              >
+                Eyes
+              </text>
+
+              <!-- Neck -->
+              <rect
+                x="135"
+                y="105"
+                width="30"
+                height="25"
+                rx="5"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="head-neck"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Chest/Torso -->
+              <ellipse
+                cx="150"
+                cy="180"
+                rx="55"
+                ry="50"
+                fill="url(#bodyGrad)"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Lungs -->
+              <ellipse
+                cx="130"
+                cy="170"
+                rx="20"
+                ry="25"
+                fill="#ff9999"
+                class="body-part"
+                data-region="pulmonary"
+                stroke="#fff"
+                stroke-width="2"
+                opacity="0.8"
+              />
+              <ellipse
+                cx="170"
+                cy="170"
+                rx="20"
+                ry="25"
+                fill="#ff9999"
+                class="body-part"
+                data-region="pulmonary"
+                stroke="#fff"
+                stroke-width="2"
+                opacity="0.8"
+              />
+              <text
+                x="150"
+                y="175"
+                text-anchor="middle"
+                font-size="9"
+                fill="#333"
+              >
+                Lungs
+              </text>
+
+              <!-- Heart -->
+              <path
+                d="M 140 160 C 140 155, 135 155, 135 160 C 135 155, 130 155, 130 160 C 130 165, 140 175, 145 180 C 150 175, 160 165, 160 160 C 160 155, 155 155, 155 160 C 155 155, 150 155, 150 160 Z"
+                fill="#e74c3c"
+                class="body-part"
+                data-region="cardiovascular"
+                stroke="#fff"
+                stroke-width="2"
+              />
+              <text
+                x="145"
+                y="185"
+                text-anchor="middle"
+                font-size="8"
+                fill="#333"
+              >
+                Heart
+              </text>
+
+              <!-- Arms -->
+              <ellipse
+                cx="90"
+                cy="180"
+                rx="20"
+                ry="60"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="210"
+                cy="180"
+                rx="20"
+                ry="60"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Forearms -->
+              <ellipse
+                cx="70"
+                cy="260"
+                rx="15"
+                ry="40"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="230"
+                cy="260"
+                rx="15"
+                ry="40"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Hands -->
+              <ellipse
+                cx="70"
+                cy="310"
+                rx="12"
+                ry="15"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="230"
+                cy="310"
+                rx="12"
+                ry="15"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Abdomen -->
+              <ellipse
+                cx="150"
+                cy="260"
+                rx="45"
+                ry="35"
+                fill="#ffeb99"
+                class="body-part"
+                data-region="gastrointestinal"
+                stroke="#fff"
+                stroke-width="2"
+                opacity="0.8"
+              />
+              <text
+                x="150"
+                y="265"
+                text-anchor="middle"
+                font-size="9"
+                fill="#333"
+              >
+                Abdomen
+              </text>
+
+              <!-- Skin overlay areas -->
+              <rect
+                x="105"
+                y="130"
+                width="90"
+                height="20"
+                rx="10"
+                fill="#ffd6cc"
+                class="body-part"
+                data-region="dermatology"
+                stroke="#fff"
+                stroke-width="1"
+                opacity="0.6"
+              />
+              <rect
+                x="110"
+                y="240"
+                width="80"
+                height="15"
+                rx="7"
+                fill="#ffd6cc"
+                class="body-part"
+                data-region="dermatology"
+                stroke="#fff"
+                stroke-width="1"
+                opacity="0.6"
+              />
+              <text
+                x="150"
+                y="142"
+                text-anchor="middle"
+                font-size="8"
+                fill="#333"
+              >
+                Skin
+              </text>
+
+              <!-- Pelvis -->
+              <ellipse
+                cx="150"
+                cy="320"
+                rx="40"
+                ry="25"
+                fill="#dda0dd"
+                class="body-part"
+                data-region="gynecological"
+                stroke="#fff"
+                stroke-width="2"
+                opacity="0.8"
+              />
+              <text
+                x="150"
+                y="325"
+                text-anchor="middle"
+                font-size="9"
+                fill="#333"
+              >
+                Pelvis
+              </text>
+
+              <!-- Thighs -->
+              <ellipse
+                cx="130"
+                cy="400"
+                rx="20"
+                ry="60"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="170"
+                cy="400"
+                rx="20"
+                ry="60"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Lower legs -->
+              <ellipse
+                cx="130"
+                cy="500"
+                rx="18"
+                ry="50"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="170"
+                cy="500"
+                rx="18"
+                ry="50"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Feet -->
+              <ellipse
+                cx="130"
+                cy="565"
+                rx="15"
+                ry="12"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+              <ellipse
+                cx="170"
+                cy="565"
+                rx="15"
+                ry="12"
+                fill="url(#bodyGrad)"
+                class="body-part"
+                data-region="orthopedic"
+                stroke="#999"
+                stroke-width="2"
+              />
+
+              <!-- Labels for extremities -->
+              <text
+                x="90"
+                y="190"
+                text-anchor="middle"
+                font-size="8"
+                fill="#333"
+              >
+                Arms
+              </text>
+              <text
+                x="150"
+                y="410"
+                text-anchor="middle"
+                font-size="8"
+                fill="#333"
+              >
+                Legs
+              </text>
+            </svg>
+
+            <div
+              id="selectedRegion"
+              class="selected-region"
+              style="display: none"
+            >
+              Click on a body part to explore HSI applications
+            </div>
+            <div class="tooltip" id="tooltip"></div>
+          </div>
+        </div>
+
+        <div class="literature-section">
+          <h2 class="section-title">Literature by Anatomical Region</h2>
+          <div
+            id="searchResultsInfo"
+            class="search-results-info"
+            style="display: none"
+          ></div>
+          <div class="literature-list" id="literatureList">
+            <!-- Literature will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h2 class="section-title">Research Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">24+</div>
+            <div class="stat-label">Research Papers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">9</div>
+            <div class="stat-label">Anatomical Regions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">2016-2024</div>
+            <div class="stat-label">Latest Publications</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Non-invasive Methods</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Literature data organized by anatomical regions
+      const literatureData = {
+        neurological: {
+          title: "Neurological Applications",
+          papers: [
+            {
+              title:
+                "Hyperspectral imaging in neurosurgery: a review of systems, computational methods, and clinical applications",
+              source: "Journal of Biomedical Optics",
+              description:
+                " summary: Comprehensive review of HSI techniques in neurosurgery for distinguishing pathologic from normal tissues during surgical procedures. Hyperspectral imaging (HSI) is a promising tool in neurosurgery for accurately distinguishing between healthy and pathological brain tissues, addressing limitations of current surgical guidance methods. This review examines HSI's technical and clinical aspects, covering over 25 imaging systems, 45 clinical studies, and 60 computational methods. The paper discusses HSI systems based on reflectance and fluorescence, techniques for tissue classification and brain function mapping, and visualization tools like augmented reality. Results show HSI's effectiveness in tumor identification, perfusion assessment, and epilepsy detection. Despite current limitations, HSI holds strong potential to become a valuable surgical adjunct as technology advances.",
+              summary:
+                "Hyperspectral imaging (HSI) is a promising tool in neurosurgery for accurately distinguishing between healthy and pathological brain tissues, addressing limitations of current surgical guidance methods. This review examines HSI's technical and clinical aspects, covering over 25 imaging systems, 45 clinical studies, and 60 computational methods. The paper discusses HSI systems based on reflectance and fluorescence, techniques for tissue classification and brain function mapping, and visualization tools like augmented reality. Results show HSI's effectiveness in tumor identification, perfusion assessment, and epilepsy detection. Despite current limitations, HSI holds strong potential to become a valuable surgical adjunct as technology advances.",
+              keywords: [
+                "neurosurgery",
+                "brain imaging",
+                "tissue classification",
+                "surgical guidance",
+              ],
+              link: "https://www.spiedigitallibrary.org/journals/journal-of-biomedical-optics/volume-30/issue-2/023512/Hyperspectral-imaging-in-neurosurgery--a-review-of-systems-computational/10.1117/1.JBO.30.2.023512.full"
+            },
+            {
+              title:
+                "Intraoperative functional and metabolic brain mapping using Hyperspectral imaging",
+              source: "Source: spie digital library",
+              description:
+                " Abstract: Analysis of HSI applications for brain cortex imaging during cerebral surgery, focusing on real-time tissue assessment.The acquisition of narrow wavelength bands in the Near-Infrared (NIR) range using hyperspectral imaging have the potential to yield functional and metabolic information during a neurosurgical operation. The analysis of the reflectance spectra through the modified Beer-Lambert law and Monte Carlo simulations enable us to measure the concentration changes of oxy, deoxygenated hemoglobin and cytochrome-c-oxidase during the video acquisition. A functional model has been implemented to evaluate the functional brain areas following neuronal activation by physiological stimuli. The results show a good correlation between the computed quantitative functional maps and the brain areas identified by electrical brain stimulation. This work demonstrates that a quantitative modeling of the brain hemodynamic and metabolic biomarkers could evaluate in a robust way the functional areas and the cellular energy metabolism during neurosurgery.",
+              summary:
+                "This study demonstrates the potential of hyperspectral imaging for intraoperative brain mapping, showing good correlation between computed functional maps and areas identified by electrical brain stimulation. The technique enables quantitative modeling of brain hemodynamic and metabolic biomarkers during neurosurgery.",
+              keywords: [
+                "cortex",
+                "cerebral surgery",
+                "real-time imaging",
+                "brain tissue",
+              ],
+              link: "https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11225/112250B/Intraoperative-functional-and-metabolic-brain-mapping-using-hyperspectral-imaging/10.1117/12.2545968.full"
+            },
+            {
+              title:
+                "INTRA-OPERATIVE HYPERSPECTRAL IMAGING FOR BRAIN TUMOUR DETECTION AND DELINEATION: CURRENT PROGRESS ON THE HELICOID PROJECT ",
+              source: "Source: arvo journals",
+              description:
+                "Purpose: Background: Hyperspectral Imaging (HSI) captures spectral information that has been shown to characterise tissues. Since the surgeon's naked eye is sometimes unable to differentiate between tumour and normal brain, HSI could be a solution. Aims: We aim to develop an intra-operative HSI system capable of tumour detection and delineation.Methods: Using a newly developed HSI system that captures images across the visible and near-infrared electromagnetic spectrum (from 400nm to 1700nm); we obtained hyperspectral images during tumour resection. Before imaging, markers were placed at the location of the tumour and normal brain. Images were then captured with the markers in-situ. Tissue samples were obtained from the location of the markers and sent for tissue diagnosis.A pre-processing chain was then applied to the spectrum of each pixel within the hyperspectral images. The spectra and pixels within the areas marked areas were then labelled with their tissue diagnosis. This labelled data was then used to produce and test algorithms that automatically classified images from their spectral signatures.Results: Using data from 22 resections, we have developed algorithms capable of automatically identifying tumour and normal brain from hyperspectral images. Furthermore, the algorithms were capable of producing a 2D colour map correlating to the location of the tumour and normal brain.",
+              summary:
+                "The HELICOID project demonstrates that hyperspectral imaging can be used to develop algorithms for automatic identification of brain tumors during surgery, producing 2D color maps that correlate tumor locations with spectral signatures.",
+              keywords: [
+                "brain tumor",
+                "intraoperative imaging",
+                "diagnostic tool",
+                "neurosurgery",
+              ],
+              link: "https://journals.lww.com/international-journal-of-surgery/fulltext/2016/12002/INTRA_OPERATIVE_HYPERSPECTRAL_IMAGING_FOR_BRAIN.27.aspx"
+            },
+          ],
+        },
+        ophthalmology: {
+          title: "Ophthalmological Applications",
+          papers: [
+            {
+              title:
+                "In Vivo Assessment of Retinal Biomarkers by Hyperspectral imaging: Early Detection of Alzheimers Diseases",
+              source: "source: ACS publications",
+              description:
+                "Abstract A noninvasive and cost-effective means to detect preclinical Alzheimer's disease (AD) and monitor disease progression would be invaluable. The retina is a developmental extension of the brain and has been viewed as a window to evaluate AD-related pathology. Cross-sectional studies have shown structural changes in the retina of AD patients that include thinning of the retinal nerve-fiber layer and changes in retinal vasculature. However, such changes do not manifest in early stages of the disease nor are they specific biomarkers for AD. Described herein is the utilization of our retinal hyperspectral imaging (rHSI) technique as a biomarker for identification of AD-related early pathological changes in the retina. Specifically, this account concerns the translation of our rHSI technique from animal models to human AD subjects. The underlying principle is Rayleigh light scattering, which is expected from low-order Aβ aggregates present in early pathology. Recruitment was restricted to AD subjects (N = 19) and age-matched controls, with no family history of AD (N = 16). To limit the influence of skin pigmentation, subjects were restricted to those with skin pigmentation values of 2–3 on the Fitzpatrick scale. The largest spectral deviation from control subjects, rHSI signature, was obtained at the MCI stage with MMSE scores ⩾22, suggesting higher sensitivity of this technique in early disease stages. The rHSI signature observed is unaffected by eye pathologies such as glaucoma and cataract. Age of the subjects minimally influenced the spectral signatures. The rHSI technique shows promise for detection of preclinical AD; it is conducted in a truly noninvasive manner, without application of an exogenous label, and is thus potentially suitable for population screening..",
+              summary:
+                "Retinal hyperspectral imaging shows promise as a non-invasive biomarker for early Alzheimer's disease detection, with spectral signatures detectable in early disease stages and unaffected by other eye pathologies.",
+              keywords: [
+                "retina",
+                "eye imaging",
+                "vision",
+                "reflectance",
+                "absorbance",
+              ],
+              link: "https://pubs.acs.org/doi/abs/10.1021/acschemneuro.9b00331"
+            },
+            {
+              title:
+                "Non-invasive in vivo hyperspectral imaging of the retina for potential biomarker use in Alzheimer's disease",
+              source: " Source: Nature Communications",
+              description:
+                "Investigation of retinal HSI as a biomarker for brain amyloid beta levels in Alzheimer's disease patients. Studies of rodent models of Alzheimer's disease (AD) and of human tissues suggest that the retinal changes that occur in AD, including the accumulation of amyloid beta (Aβ), may serve as surrogate markers of brain Aβ levels. As Aβ has a wavelength-dependent effect on light scatter, we investigate the potential for in vivo retinal hyperspectral imaging to serve as a biomarker of brain Aβ. Significant differences in the retinal reflectance spectra are found between individuals with high Aβ burden on brain PET imaging and mild cognitive impairment (n = 15), and age-matched PET-negative controls (n = 20). Retinal imaging scores are correlated with brain Aβ loads. The findings are validated in an independent cohort, using a second hyperspectral camera. A similar spectral difference is found between control and 5xFAD transgenic mice that accumulate Aβ in the brain and retina. These findings indicate that retinal hyperspectral imaging may predict brain Aβ load.Similar content being viewed by others",
+              summary:
+                "Retinal hyperspectral imaging shows significant differences in reflectance spectra between individuals with high brain amyloid beta burden and controls, suggesting potential as a non-invasive biomarker for Alzheimer's disease.",
+              keywords: [
+                "retina",
+                "Alzheimer's",
+                "biomarker",
+                "amyloid beta",
+                "non-invasive",
+              ],
+              link: "https://www.nature.com/articles/s41467-019-12242-1"
+            },
+            {
+              title:
+                "Non invasive assessment of Retinal oxygen content among normal and diabetic Human subject. A study using Hyperspectral computed tomographic imaging spectroscopy",
+              source: "Source: RETINA",
+              description:
+                "Purpose: his pilot study was aimed to demonstrate the clinical feasibility of using hyperspectral computed tomographic spectroscopy to measure blood oxygen content in human retinal vessels..     Hyperspectral computed tomographic spectroscopy is a clinically feasible method for measurement and analysis of vascular oxygen content in retinal health and disease. This study uses the techniques relevant to oximetry; however, the breadth of spectral data available through this method may be applicable to study other anatomical and functional features of the retina in health and disease.",
+              summary:
+                "Hyperspectral computed tomographic spectroscopy proves clinically feasible for measuring retinal blood oxygen content, with potential applications for studying various retinal features in health and disease.",
+              keywords: [
+                "spectral imaging",
+                "retina",
+                "liquid crystal",
+                "tunable filters",
+              ],
+              link: "https://journals.lww.com/retinajournal/abstract/2014/09000/noninvasive_assessment_of_retinal_vascular_oxygen.19.aspx"
+            },
+            {
+              title:
+                "Hyperspectral imaging for measurement of oxygen saturation in the optic nerve head",
+              source: "Source: arvo journals",
+              description:
+                "purpose. To evaluate a hyperspectral imaging technique for monitoring relative spatial changes in retinal oxygen saturation.methods. The optic nerve head (ONH) and overlying vessels in cynomolgus monkey eyes were imaged with a fundus camera attached to a hyperspectral imaging system. Images were acquired with inspiration of room air and pure oxygen and at controlled intraocular pressures (IOP) of 15 mm Hg (normal) and 60 mm Hg (sustained for up to 5 minutes). Changes in relative blood oxygen saturation in the vessels and ONH were assessed from reflectance spectra. Saturation maps were derived from contributions of oxygenated and deoxygenated hemoglobin spectral signatures extracted from hyperspectral images. The results obtained with hyperspectral imaging were compared with known experimental outcomes.results. Pure oxygen markedly increased oxygen saturation in veins. Increases in arteries and the ONH were smaller. The results obtained with hyperspectral image analysis agreed with known changes in oxygen saturation from breathing experiments. Raising IOP reduced saturation in all structures and resulted in profound desaturation of arteries. During sustained high IOP, a rebound in saturation was observed in the ONH. Spatial maps clearly showed the saturation changes in arteries, veins, and surrounding tissues.conclusions. Hyperspectral imaging can be adapted to measure and map relative oxygen saturation in retinal structures and the ONH in nonhuman primate eyes.",
+              summary:
+                "Hyperspectral imaging effectively measures and maps relative oxygen saturation in retinal structures and optic nerve head, with results consistent with known physiological responses to oxygen and intraocular pressure changes.",
+              keywords: [
+                "ophthalmology",
+                "retinal imaging",
+                "ocular diagnostics",
+                "eye health",
+              ],
+              link: "https://iovs.arvojournals.org/article.aspx?articleid=2124399"
+            },
+            {
+              title:
+                "Validation of Human whole blood oximetry using Hyperspectral Fundus camera with a model eye",
+              source: " Source: arvo journals",
+              description:
+                "Purpose.: To assess the accuracy of human blood oximetry measurements in a model eye with a hyperspectral fundus camera.Methods.: Seven human whole blood samples (two arterial, five venous) were obtained, the oxygen saturations measured with a CO oximeter, and the samples inserted into quartz tubes with internal diameters of 100 and 150 μm. The tubes (n = 20; ten 100 μm and ten 150 μm) were placed within a model eye in front of a background reflectance surface with reflectivities of 20%, 60%, and 99%. Spectral images at wavelengths between 500 and 650 nm were acquired with a hyperspectral fundus camera and analyzed with an oximetric model to calculate the oxygen saturation of blood within the tubes. The calculated oxygen saturations were compared with the measured oxygen saturations. The effects of the background reflectivity and tube size on the accuracy of the calculated oxygen saturations were evaluated.Results.: Background reflectivity and tube size had no significant effect on the mean oxygen saturation difference (P = 0.18 and P = 0.99, respectively; repeated-measures, two-way ANOVA). The mean differences (SD) between the measured and calculated oxygen saturations in segments of the 100 and 150 μm tubes overlying the 20%, 60%, and 99% background reflectivities were (100 μm) −4.0% (13.4%), −6.4% (9.9%), and −5.5% (10.2%) and (150 μm) −5.3% (10.8%), −5.2% (10.7%), and −5.2% (10.9%), respectively.Conclusions.: There was reasonable agreement between the measured oxygen saturation values and those calculated by the oximetry model. The oximetry model could be used to determine the functional health of the retina.",
+              summary:
+                "Hyperspectral fundus camera measurements show reasonable agreement with direct oximetry measurements, unaffected by background reflectivity or tube size, suggesting clinical utility for assessing retinal vascular health.",
+              keywords: [
+                "ophthalmology",
+                "retinal imaging",
+                "disease diagnosis",
+                "eye health",
+              ],
+              link: "https://iovs.arvojournals.org/article.aspx?articleid=2128041"
+            },
+          ],
+        },
+        dermatology: {
+          title: "Dermatological Applications",
+          papers: [
+            {
+              title:
+                "Non-Invasive Skin Cancer Diagnosis Using Hyperspectral Imaging for In-Situ Clinical Support",
+              source: "MDPI/PubMed",
+              description:
+                "Abstract Skin cancer is one of the most common forms of cancer worldwide and its early detection its key to achieve an effective treatment of the lesion. Commonly, skin cancer diagnosis is based on dermatologist expertise and pathological assessment of biopsies. Although there are diagnosis aid systems based on morphological processing algorithms using conventional imaging, currently, these systems have reached their limit and are not able to outperform dermatologists. In this sense, hyperspectral (HS) imaging (HSI) arises as a new non-invasive technology able to facilitate the detection and classification of pigmented skin lesions (PSLs), employing the spectral properties of the captured sample within and beyond the human eye capabilities. This paper presents a research carried out to develop a dermatological acquisition system based on HSI, employing 125 spectral bands captured between 450 and 950 nm. A database composed of 76 HS PSL images from 61 patients was obtained and labeled and classified into benign and malignant classes. A processing framework is proposed for the automatic identification and classification of the PSL based on a combination of unsupervised and supervised algorithms. Sensitivity and specificity results of 87.5% and 100%, respectively, were obtained in the discrimination of malignant and benign PSLs. This preliminary study demonstrates, as a proof-of-concept, the potential of HSI technology to assist dermatologists in the discrimination of benign and malignant PSLs during clinical routine practice using a real-time and non-invasive hand-held device.",
+              summary:
+                "Hyperspectral imaging demonstrates high sensitivity (87.5%) and specificity (100%) in discriminating between malignant and benign pigmented skin lesions, showing potential as a non-invasive diagnostic aid for dermatologists.",
+              keywords: [
+                "skin cancer",
+                "melanoma",
+                "lesion detection",
+                "pigmented lesions",
+                "diagnosis",
+              ],
+              link: "https://www.mdpi.com/2077-0383/9/6/1662"
+            },
+            {
+              title:
+                "Burn depth assessment using hyperspectral imaging in a prospective single center study",
+              source: "Source: sciencedirect",
+              description:
+                "ABSTRACT Background The assessment of thermal burn depth remains challenging. Over the last decades, several optical systems were developed to determine burn depth. So far, only laser doppler imaging (LDI) has been shown to be reliable while others such as infrared thermography or spectrophotometric intracutaneous analysis have been less accurate. The aim of our study is to evaluate hyperspectral imaging (HSI) as a new optical device. Methods Patients suffering thermal trauma treated in a burn unit in Germany between November 2019 and September 2020 were included. Inclusion criteria were age ≥18 years, 2nd or 3rd degree thermal burns, written informed consent and presentation within 24 h after injury. Clinical assessment and hyperspectral imaging were performed 24, 48 and 72 h after the injury. Patients in whom secondary wound closure was complete within 21 days (group A) were compared to patients in whom secondary wound closure took more than 21 days or where skin grafting was indicated (group B). Demographic data and the primary parameters generated by HSI were documented. A Mann Whitney-U test was performed to compare the groups. A p-value below 0.05 was considered to be statistically significant. The data generated using HSI were combined to create the HSI burn index (BI). Using a logistic regression and receiver operating characteristics curve (ROC) sensitivity and specificity of the BI were calculated. The trial was officially registered on DRKS (registration number: DRKS00022843). Results Overall, 59 patients with burn wounds were eligible for inclusion. Ten patients were excluded because of a poor data quality. Group A comprised 36 patients with a mean age of 41.5 years and a mean burnt body surface area of 2.7%. In comparison, 13 patients were allocated to group B because of the need for a skin graft (n = 10) or protracted secondary wound closure lasting more than 21 days. The mean age of these patients was 46.8 years. They had a mean affected body surface area of 4.0%. 24, 48, and 72 h after trauma the BI was 1.0 ± 0.28, 1.2 ± 0.29 and 1.55 ± 0.27 in group A and 0.78 ± 0.14, 1.05 ± 0.23 and 1.23 ± 0.27 in group B. At every time point significant differences were demonstrated between the groups. At 24 h, ROC analysis demonstrated BI threshold of 0.95 (sensitivity 0.61/specificity 1.0), on the second day of 1.17 (sensitivity 0.51/specificity 0.81) and on the third day of 1.27 (sensitivity 0.92/specificity 0.71). Conclusion Changes in microcirculation within the first 72 h after thermal trauma were reflected by an increasing BI in both groups. After 72 h, the BI is able to predict the need for a skin graft with a sensitivity of 92% and a specificity of 71%.",
+              summary:
+                "Hyperspectral imaging's burn index (BI) effectively tracks microcirculation changes in burns and can predict the need for skin grafts with 92% sensitivity and 71% specificity after 72 hours.",
+              keywords: [
+                "dermatoscope",
+                "skin imaging",
+                "dermatology",
+                "diagnosis",
+              ],
+              link: "https://www.sciencedirect.com/science/article/abs/pii/S0305417921002576"
+            },
+            {
+              title:
+                "The Application of Hyperspectral Imaging to the Measurement of Pressure Injury Area",
+              source: "MDPI",
+              description:
+                "Abstract Wound size measurement is an important indicator of wound healing. Nurses measure wound size in terms of length × width in wound healing assessment, but it is easy to overestimate the extent of the wound due to irregularities around it. Using hyperspectral imaging (HIS) to measure the area of a pressure injury could provide more accurate data than manual measurement, ensure that the same tool is used for standardized assessment of wounds, and reduce the measurement time. This study was a pilot cross-sectional study, and a total of 30 patients with coccyx sacral pressure injuries were recruited to the rehabilitation ward after approval by the human subjects research committee. We used hyperspectral images to collect pressure injury images and machine learning (k-means) to automatically classify wound areas in combination with the length × width rule (LW rule) and image morphology algorithm for wound judgment and area calculation. The results calculated from the data were compared with the calculations made by the nursing staff using the length × width rule. The use of hyperspectral images, machine learning, the length × width rule (LW rule), and an image morphology algorithm to calculate the wound area yielded more accurate measurements than did nurses, effectively reduced the chance of human error, reduced the measurement time, and produced real-time data. HIS can be used by nursing staff to assess wounds with a standardized approach so as to ensure that proper wound care can be provided.",
+              summary:
+                "Hyperspectral imaging combined with machine learning provides more accurate pressure injury area measurements than manual methods, reducing human error and measurement time while enabling standardized wound assessment.",
+              keywords: [
+                "multispectral",
+                "hyperspectral",
+                "dermatology",
+                "hyperspectral imaging; pressure injury; area measurement",
+              ],
+              link: "https://www.mdpi.com/1660-4601/20/4/2851"
+            },
+            {
+              title:
+                "The assessment of moderate acne vulgaris face skin using blood perfusion and hyperspectral imaging A pilot study",
+              source: "Source: online library",
+              description:
+                "Abstract Background Microcirculation is the flow of blood through the smallest vessels in the circulatory system. Capillaries respond to various pathologies much earlier than arteries and veins, the changes which indicate that the disease is already developing. Careful monitoring of the functioning of the capillary system often allows the detection of in vivo disorders at an early stage. Aims The aim of the study was to evaluate the microcirculation within acne lesions. A noninvasive method of semi-quantitative blood perfusion measurement based on laser speckle contrast analysis (LASCA) and a quantitative assessment of the acne severity using the hyperspectral imaging method supported by image analysis and processing methods were used. Patients/Method The acne lesion perfusion was compared to the healthy skin perfusion of the control group. The reflectance in the range from 400 to 1000 nm was also compared for acne lesions and healthy skin. A dedicated version of the algorithm based on the gray-level co-occurrence matrix was used to compare differences between acne lesions and healthy skin. Results Blood perfusion in acne lesions is on average 117% higher than in healthy skin. The reflectance of acne lesions was lower in the range of 400–600 nm compared to the healthy skin. A statistically significant decrease in the reflectance of acne lesions was demonstrated for wavelengths: 434, 549, and 588 nm. Conclusions Increased blood perfusion in acne lesions compared to healthy skin suggests increased chemotaxis of inflammatory cells and wound healing. Decrease points in skin reflectance resemble the absorption peaks for hemoglobin and coproporphyrin III produced by Cutibacterium acnes. Thus, the proposed methods may serve not only for the early detection of acne lesions, before they manifest themselves clinically for the naked eye, but may also be a tool for quantifying the effectiveness of acne treatment.",
+              summary:
+                "Hyperspectral imaging reveals acne lesions have 117% higher blood perfusion than healthy skin and distinct reflectance patterns, suggesting utility for early detection and treatment monitoring.",
+              keywords: [
+                "skin cancer",
+                "hyperspectral imaging",
+                "diagnosis",
+                "non-invasive",
+              ],
+              link: "https://onlinelibrary.wiley.com/doi/full/10.1111/jocd.15811"
+            },
+            {
+              title: "The use of hyperspectral imaging (HSI) in wound healing",
+              source: "Source:spie digital library",
+              description:
+                "A hyperspectral imaging system (HsI), described previously, was utilized to evaluate and monitor wounds and their healing surgery and post-operatively. Briefly, the system consists of a DLP® based spectral light modulator providing active spectral illumination that is synchronized with a digital focal plan array for collecting spectroscopic images that are processed for mapping the percentage of oxyhemoglobin at each detector pixel non-invasively and at near video rates ~8 chemically encode images per second.",
+              summary:
+                "Hyperspectral imaging enables non-invasive, near real-time mapping of oxyhemoglobin percentages for wound healing assessment both during surgery and in post-operative monitoring.",
+              keywords: [
+                "systemic sclerosis",
+                "skin microcirculation",
+                "hyperspectral imaging",
+                "vascular abnormalities",
+              ],
+              link: "https://www.spiedigitallibrary.org/conference-proceedings-of-spie/8979/897903/The-use-of-hyperspectral-imaging-HSI-in-wound-healing/10.1117/12.2041841.full"
+            },
+          ],
+        },
+        cardiovascular: {
+          title: "Cardiovascular Applications",
+          papers: [
+            {
+              title:
+                "Evaluation of Hyperspectral Imaging for Follow-Up Assessment after Revascularization in Peripheral Artery Disease",
+              source: "MDPI",
+              description:
+                "Abstract Background: Assessment of tissue oxygenation is an important aspect of detection and monitoring of patients with peripheral artery disease (PAD). Hyperspectral imaging (HSI) is a non-contact technology for assessing microcirculatory function by quantifying tissue oxygen saturation (StO2). This study investigated whether HSI can be used to monitor skin oxygenation in patients with PAD after appropriate treatment of the lower extremities. Methods: For this purpose, 37 patients with PAD were studied by means of ankle–brachial index (ABI) and HSI before and after surgical or endovascular therapy. Thereby, the oxygenation parameter StO2 and near infrared (NIR) perfusion index were quantified in seven angiosomes on the diseased lower leg and foot. In addition, the effects of skin temperature and physical activity on StO2 and the NIR perfusion index and the respective inter-operator variability of these parameters were investigated in 25 healthy volunteers. Results: In all patients, the ABI significantly increased after surgical and endovascular therapy. In parallel, HSI revealed significant changes in both StO2 and NIR perfusion index in almost all studied angiosomes depending on the performed treatment. The increase in tissue oxygenation saturation was especially pronounced after surgical treatment. Neither heat nor cold, nor physical activity, nor repeated assessments of HSI parameters by independent investigators significantly affected the results on StO2 and the NIR perfusion index. Conclusions: Tissue oxygen saturation data obtained with HSI are robust to external confounders, such as temperature and physical activity, and do not show inter-operator variability; therefore, can be used as an additional technique to established methods, such as the ABI, to monitor peripheral perfusion in patients with PAD.",
+              summary:
+                "Hyperspectral imaging provides reliable, operator-independent measurements of tissue oxygenation in peripheral artery disease patients, showing significant improvements after revascularization procedures unaffected by external factors like temperature or activity.",
+              keywords: [
+                "tissue",
+                "heart",
+                " tissuee oxygenation",
+                "peripheral artery disease;",
+                "blood flow",
+              ],
+              link: "https://www.mdpi.com/2077-0383/11/3/758"
+            },
+          ],
+        },
+        pulmonary: {
+          title: "Pulmonary Applications",
+          papers: [
+            {
+              title:
+                "Hyperspectral imaging enables the differentiation of differentially inflated and perfused pulmonary tissue: a proof-of-concept study in pulmonary lobectomies for intersegmental plane mapping",
+              source: "PubMed",
+              description:
+                "Abstract Objectives: The identification of the intersegmental plane is a major interoperative challenges during pulmonary segmentectomies. The objective of this pilot study is to test the feasibility of lung perfusion assessment by Hyperspectral Imaging for identification of the intersegmental plane.Methods: A pilot study (clinicaltrials.org: NCT04784884) was conducted in patients with lung cancer. Measuring tissue oxygenation (StO2; upper tissue perfusion), organ hemoglobin index (OHI), near-infrared index (NIR; deeper tissue perfusion) and tissue water index (TWI), the Hyperspectral Imaging measurements were carried out in inflated (Pvent) and deflated pulmonary lobes (PnV) as well as in deflated pulmonary lobes with divided circulation (PnVC) before dissection of the lobar bronchus.Results: A total of 341 measuring points were evaluated during pulmonary lobectomies. Pulmonary lobes showed a reduced StO2 (Pvent: 84.56% ± 3.92 vs. PnV: 63.62% ± 11.62 vs. PnVC: 39.20% ± 23.57; p<0.05) and NIR-perfusion (Pvent: 50.55 ± 5.62 vs. PnV: 47.55 ± 3.38 vs. PnVC: 27.60 ± 9.33; p<0.05). There were no differences of OHI and TWI between the three groups.Conclusions: This pilot study demonstrates that HSI enables differentiation between different ventilated and perfused pulmonary tissue as a precondition for HSI segment mapping.",
+              summary:
+                "Hyperspectral imaging effectively differentiates between ventilated and perfused lung tissue, showing significant differences in oxygenation and perfusion metrics that could guide intersegmental plane identification during pulmonary surgery.",
+              keywords: [
+                "pulmonary",
+                "respiratory",
+                "lung imaging",
+                "breathing",
+              ],
+              link: "https://pubmed.ncbi.nlm.nih.gov/36932645/"
+            },
+            {
+              title:
+                "Intraoperative Determination of Bronchus Stump and Anastomosis Perfusion with Hyperspectral Imaging",
+              source: "sage journals",
+              description:
+                "Abstract Background The intraoperative evaluation of bronchus perfusion is limited. Hyperspectral Imaging (HSI) is a newly established intraoperative imaging technique that enables a non-invasive, real-time perfusion analysis. Therefore, the purpose of this study was to determine the intraoperative perfusion of bronchus stump and anastomosis during pulmonary resections with HSI. Methods In this prospective, IDEAL Stage 2a study (Clinicaltrials.gov: NCT04784884) HSI measurements were carried out before bronchial dissection and after bronchial stump formation or bronchial anastomosis, respectively. Tissue oxygenation (StO2; upper tissue perfusion), organ hemoglobin index (OHI), near-infrared index (NIR; deeper tissue perfusion) and tissue water index (TWI) were calculated. Results Bronchus stumps showed a reduced NIR (77.82 ± 10.27 vs 68.01 ± 8.95; P = 0,02158) and OHI (48.60 ± 1.39 vs 38.15 ± 9.74; P = <.0001), although the perfusion of the upper tissue layers was equivalent before and after resection (67.42% ± 12.53 vs 65.91% ± 10.40). In the sleeve resection group, we found both a significant decrease in StO 2 and NIR between central bronchus and anastomosis region (StO2: 65.09% ± 12.57 vs 49.45 ± 9.94; P = .044; NIR: 83.73 ± 10.92 vs 58.62 ± 3.01; P = .0063). Additionally, NIR was decreased in the re-anastomosed bronchus compared to central bronchus region (83.73 ± 10.92 vs 55.15 ± 17.56; P = .0029). Conclusions Although both bronchus stumps and anastomosis show an intraoperative reduction of tissue perfusion, there is no difference of tissue hemoglobin level in bronchus anastomosis.",
+              summary:
+                "Hyperspectral imaging reveals reduced perfusion in bronchial stumps and anastomoses during pulmonary resections, providing valuable intraoperative data while showing preserved tissue hemoglobin levels in anastomoses.",
+              keywords: [
+                "pulmonary",
+                "perfusion",
+                "lung function",
+                "animal model",
+              ],
+              link: "https://journals.sagepub.com/doi/abs/10.1177/15533506231157165"
+            },
+          ],
+        },
+        gastrointestinal: {
+          title: "Gastrointestinal Applications",
+          papers: [
+            {
+              title:
+                "Hyperspectral enhanced reality (HYPER) for anatomical liver resection",
+              source: "springer nature link",
+              description:
+                "Abstract Background Clinical evaluation of the demarcation line separating ischemic from non-ischemic liver parenchyma may be challenging. Hyperspectral imaging (HSI) is a noninvasive imaging modality, which combines a camera with a spectroscope and allows quantitative imaging of tissue oxygenation. Our group developed a software to overlay HSI images onto the operative field, obtaining HSI-based enhanced reality (HYPER). The aim of the present study was to evaluate the accuracy of HYPER to identify the demarcation line after a left vascular inflow occlusion during an anatomical left hepatectomy. Materials and methods In the porcine model (n = 3), the left branches of the hepatic pedicle were ligated. Before and after vascular occlusion, HSI images based on tissue oxygenation (StO2), obtained through the Near-Infrared index (NIR index), were regularly acquired and superimposed onto RGB video. The demarcation line was marked on the liver surface with electrocautery according to HYPER. Local lactates were measured on blood samples from the liver surface in both ischemic and perfused segments using a strip-based device. At the same areas, confocal endomicroscopy was performed. Results After ligation, HSI demonstrated a significantly lower oxygenation (NIR index) in the left medial lobe (LML) (0.27% ± 0.21) when compared to the right medial lobe (RML) (58.60% ± 12.08; p = 0.0015). Capillary lactates were significantly higher (3.07 mmol/L ± 0.84 vs. 1.33 ± 0.71 mmol/L; p = 0.0356) in the LML versus RML, respectively. Concordantly, confocal videos demonstrated the absence of blood flow in the LML and normal perfusion in the RML. Conclusions HYPER has made it possible to correctly identify the demarcation line and quantify surface liver oxygenation. HYPER could be an intraoperative tool to guide perfusion-based demarcation line assessment and segmentation.",
+              summary:
+                "Hyperspectral enhanced reality (HYPER) accurately identifies ischemic demarcation lines in liver resection, correlating with metabolic changes and perfusion patterns, suggesting utility for surgical guidance.",
+              keywords: [
+                "gastrointestinal",
+                "tumors",
+                "cancer detection",
+                "solid tumors",
+                "abdomen",
+              ],
+              link: "https://link.springer.com/article/10.1007/s00464-020-07586-5"
+            },
+            {
+              title:
+                "New method for detection of gastric cancer by hyperspectral imaging: a pilot study",
+              source: "Source: spie digital library",
+              description:
+                "Abstract We developed a new, easy, and objective method to detect gastric cancer using hyperspectral imaging (HSI) technology combining spectroscopy and imaging A total of 16 gastroduodenal tumors removed by endoscopic resection or surgery from 14 patients at Yamaguchi University Hospital, Japan, were recorded using a hyperspectral camera (HSC) equipped with HSI technology Corrected spectral reflectance was obtained from 10 samples of normal mucosa and 10 samples of tumors for each case The 16 cases were divided into eight training cases (160 training samples) and eight test cases (160 test samples) We established a diagnostic algorithm with training samples and evaluated it with test samples Diagnostic capability of the algorithm for each tumor was validated, and enhancement of tumors by image processing using the HSC was evaluated The diagnostic algorithm used the 726-nm wavelength, with a cutoff point established from training samples The sensitivity, specificity, and accuracy rates of the algorithm's diagnostic capability in the test samples were 78.8% (63/80), 92.5% (74/80), and 85.6% (137/160), respectively Tumors in HSC images of 13 (81.3%) cases were well enhanced by image processing Differences in spectral reflectance between tumors and normal mucosa suggested that tumors can be clearly distinguished from background mucosa with HSI technology.",
+              summary:
+                "Hyperspectral imaging demonstrates 85.6% accuracy in detecting gastric cancer with distinct spectral reflectance patterns at 726nm, enabling clear tumor visualization and differentiation from normal mucosa.",
+              keywords: ["colorectal", "cancer", "detection", "diagnosis"],
+              link: "https://www.spiedigitallibrary.org/journals/journal-of-biomedical-optics/volume-18/issue-2/026010/New-method-for-detection-of-gastric-cancer-by-hyperspectral-imaging/10.1117/1.JBO.18.2.026010.full"
+            },
+            {
+              title:
+                "Intraoperative bowel perfusion quantification with hyperspectral imaging: a guidance tool for precision colorectal surgery",
+              source: "Source: springer nature link",
+              description:
+                "Abstract Background Poor anastomotic perfusion can cause anastomotic leaks (AL). Hyperspectral imaging (HSI), previously validated experimentally, provides accurate, real-time, contrast-free intestinal perfusion quantification. Clinical experience with HSI is limited. In this study, HSI was used to evaluate bowel perfusion intraoperatively. Methods Fifty-two patients undergoing elective colorectal surgeries for neoplasia (n = 40) or diverticular disease (n = 12), were enrolled. Intestinal perfusion was assessed with HSI (TIVITA®, Diaspective Vision, Am Salzhaff, Germany). This device generates a perfusion heat map reflecting the tissue oxygen saturation (StO2) amount. Prior to anastomose creation, the clinical transection line (CTL) was highlighted on the proximal bowel and imaged with HSI. Upon StO2 heat map evaluation, the hyperspectral transection line (HTL) was identified. In case of CTL/HTL discrepancy > 5 mm, the bowel was always resected at the HTL. HSI outcomes were compared to the clinical ones. Results AL occurred in one patient who underwent neoadjuvant radiochemotherapy and ultralow anterior resection for rectal cancer. HSI assessment was feasible in all patients, and StO2-values were significantly higher at proximal segments than distal ones. Twenty-six patients showed CTL/HTL discrepancy, and these patients had a lower mean StO2 (54.55 ± 21.30%) than patients without discrepancy (65.10 ± 21.30%, p = 0.000). Patients undergoing neoadjuvant radiochemotherapy showed a lower StO2 (51.41 ± 23.41%) than non-neoadjuvated patients (60.51 ± 24.98%, p = 0.010). Conclusion HSI is useful in detecting intraoperatively marginally perfused segments, for which the clinical appreciation is unreliable. Intestinal vascular supply is lower in patients undergoing neoadjuvant radiochemotherapy, and this novel finding together with the clinical impact of HSI perfusion quantification deserves further investigation in larger trials.",
+              summary:
+                "Hyperspectral imaging reliably identifies poorly perfused bowel segments during colorectal surgery, particularly in neoadjuvant radiochemotherapy patients, suggesting utility for optimizing anastomotic site selection and reducing leaks.",
+              keywords: ["colorectal", "cancer", "detection", "diagnosis"],
+              link: "https://link.springer.com/article/10.1007/s00464-022-09407-3"
+            },
+            {
+              title:
+                "Hyperspectral Imaging Combined with Artificial Intelligence in the Early Detection of Esophageal Cancer",
+              source: "Source: MDPI",
+              description:
+                "Simple Summary Detection of early esophageal cancer is important to improve patient survival, however, early diagnosis of the cancer cells is difficult, even for experienced endoscopists. This article provides a new method by using hyperspectral imaging and a deep learning diagnosis model to classify and diagnose esophageal cancer using a single-shot multibox detector. The accuracy of the results when using an RGB image in WLI was 83% and while using the spectrum data the accuracy was increased to 88%. There was an increase of 5% in WLI. The accuracy of the results when using an RGB image in NBI was 86% and while using the spectrum data the accuracy was increased to 91%. There was an increase of 5% in NBI. This study proves that the accuracy of prediction when using the spectrum data has been significantly improved and the diagnosis of narrow-band endoscopy data is more sensitive than that of white-light endoscopy. Abstract This study uses hyperspectral imaging (HSI) and a deep learning diagnosis model that can identify the stage of esophageal cancer and mark the locations. This model simulates the spectrum data from the image using an algorithm developed in this study which is combined with deep learning for the classification and diagnosis of esophageal cancer using a single-shot multibox detector (SSD)-based identification system. Some 155 white-light endoscopic images and 153 narrow-band endoscopic images of esophageal cancer were used to evaluate the prediction model. The algorithm took 19 s to predict the results of 308 test images and the accuracy of the test results of the WLI and NBI esophageal cancer was 88 and 91%, respectively, when using the spectral data. Compared with RGB images, the accuracy of the WLI was 83% and the NBI was 86%. In this study, the accuracy of the WLI and NBI was increased by 5%, confirming that the prediction accuracy of the HSI detection method is significantly improved.",
+              summary:
+                "Hyperspectral imaging combined with deep learning improves esophageal cancer detection accuracy by 5% over conventional methods (88% vs 83% for WLI, 91% vs 86% for NBI), enabling rapid and precise localization.",
+              keywords: ["colorectal", "cancer", "esophageal", "diagnosis"],
+              link: "https://www.mdpi.com/2072-6694/13/18/4593"
+            },
+          ],
+        },
+        gynecological: {
+          title: "Gynecological Applications",
+          papers: [
+            {
+              title:
+                "Multimodal hyperspectral imaging for the noninvasive diagnosis of cervical neoplasia",
+              source: "journal of lower genital tract disease",
+              description:
+                "Abstract Objective To determine the ability of Multimodal Hyperspectral Imaging (MHI) to noninvasively detect, localize and diagnose cervical neoplasia. Materials and Methods  The cervical epithelium was interrogated by MHI using tissue fluorescence and reflectance measurements after the probe was placed on the ectocervix. A Papanicolaou smear was taken, and a colposcopic examination was performed and cervical histologic specimens were collected, when indicated. MHI and Pap smear sensitivity and specificity data were compared with colposcopic and histologic results. Results  Nineteen patients had CIN2 or higher, 30 had CIN1, 34 had benign cellular changes or metaplasia, and 28 were normal by both Pap smear and colposcopic examination. At equal specificity (70%) for both tests, the sensitivity of MHI was 97%, compared to 72% for the Pap smear. Conclusion  MHI detected cervical cancer precursors at a rate greater than that obtained by a simultaneously collected Pap smear.",
+              summary:
+                "Multimodal hyperspectral imaging demonstrates superior sensitivity (97% vs 72%) to Pap smears for detecting cervical neoplasia at equal specificity, suggesting potential as a non-invasive diagnostic tool.",
+              keywords: [
+                "gynecology",
+                "women's health",
+                "reproductive system",
+                "pelvis",
+              ],
+              link: "https://journals.lww.com/jlgtd/abstract/2001/04000/multimodal_hyperspectral_imaging_for_the.1.aspx"
+            },
+          ],
+        },
+        orthopedic: {
+          title: "Orthopedic Applications",
+          papers: [
+            {
+              title:
+                "Handheld hyperspectral imaging as a tool for the post-mortem interval estimation of human skeletal remains",
+              source: "source: heliyon",
+              description:
+                "Abstract: In forensic medicine, estimating human skeletal remains' post-mortem interval (PMI) can be challenging. Following death, bones undergo a series of chemical and physical transformations due to their interactions with the surrounding environment. Post-mortem changes have been assessed using various methods, but estimating the PMI of skeletal remains could still be improved. We propose a new methodology with handheld hyperspectral imaging (HSI) system based on the first results from 104 human skeletal remains with PMIs ranging between 1 day and 2000 years. To differentiate between forensic and archaeological bone material, the Convolutional Neural Network analyzed 65.000 distinct diagnostic spectra: the classification accuracy was 0.58, 0.62, 0.73, 0.81, and 0.98 for PMIs of 0 week–2 weeks, 2 weeks–6 months, 6 months–1 year, 1 year–10 years, and >100 years, respectively. In conclusion, HSI can be used in forensic medicine to distinguish bone materials >100 years old from those <10 years old with an accuracy of 98%. The model has adequate predictive performance, and handheld HSI could serve as a novel approach to objectively and accurately determine the PMI of human skeletal remains.",
+              summary:
+                "Handheld hyperspectral imaging achieves 98% accuracy in distinguishing bones older than 100 years from more recent remains, offering a novel tool for forensic post-mortem interval estimation.",
+              keywords: [
+                "orthopedic",
+                "bone",
+                "joint",
+                "surgical guidance",
+                "tissue assessment",
+              ],
+              link: "https://www.cell.com/heliyon/fulltext/S2405-8440(24)01875-9"
+            },
+          ],
+        },
+        "head-neck": {
+          title: "Head & Neck Applications",
+          papers: [
+            {
+              title:
+                "Automatic detection of head and neck squamous cell carcinoma on histologic slides using hyperspectral microscopic imaging",
+              source: "Journal of Biomedical Optics",
+              description:
+                "Significance: Automatic, fast, and accurate identification of cancer on histologic slides has many applications in oncologic pathology.Aim: The purpose of this study is to investigate hyperspectral imaging (HSI) for automatic detection of head and neck cancer nuclei in histologic slides, as well as cancer region identification based on nuclei detection.Approach: A customized hyperspectral microscopic imaging system was developed and used to scan histologic slides from 20 patients with squamous cell carcinoma (SCC). Hyperspectral images and red, green, and blue (RGB) images of the histologic slides with the same field of view were obtained and registered. A principal component analysis-based nuclei segmentation method was developed to extract nuclei patches from the hyperspectral images and the coregistered RGB images. Spectra-based support vector machine and patch-based convolutional neural networks (CNNs) were implemented for nuclei classification. The CNNs were trained with RGB patches (RGB-CNN) and hyperspectral patches (HSI-CNN) of the segmented nuclei and the utility of the extra spectral information provided by HSI was evaluated. Furthermore, cancer region identification was implemented by image-wise classification based on the percentage of cancerous nuclei detected in each image.Results: RGB-CNN, which mainly used the spatial information of nuclei, resulted in a 0.81 validation accuracy and 0.74 testing accuracy. HSI-CNN, which utilized the spatial and spectral features of the nuclei, showed significant improvement in classification performance and achieved 0.89 validation accuracy as well as 0.82 testing accuracy. Furthermore, the image-wise cancer region identification based on nuclei detection could generally improve the cancer detection rate.Conclusions: We demonstrated that the morphological and spectral information contribute to SCC nuclei differentiation and that the spectral information within hyperspectral images could improve classification performance.",
+              summary:
+                "Hyperspectral microscopic imaging improves head and neck cancer detection accuracy (89% validation, 82% testing) over RGB imaging alone by leveraging both spatial and spectral nuclear features.",
+              keywords: [
+                "head and neck",
+                "tissue characterization",
+                "surgical guidance",
+                "throat",
+              ],
+              link: "https://www.spiedigitallibrary.org/journals/journal-of-biomedical-optics/volume-27/issue-4/046501/Automatic-detection-of-head-and-neck-squamous-cell-carcinoma-on/10.1117/1.JBO.27.4.046501.full"
+            },
+            {
+              title:
+                "Detection of Head and Neck Cancer in Surgical Specimens Using Quantitative Hyperspectral Imaging",
+              source: "Source: clinical cancer research",
+              description:
+                "Abstract Purpose: This study intends to investigate the feasibility of using hyperspectral imaging (HSI) to detect and delineate cancers in fresh, surgical specimens of patients with head and neck cancers.Experimental Design: A clinical study was conducted in order to collect and image fresh, surgical specimens from patients (N = 36) with head and neck cancers undergoing surgical resection. A set of machine-learning tools were developed to quantify hyperspectral images of the resected tissue in order to detect and delineate cancerous regions which were validated by histopathologic diagnosis. More than two million reflectance spectral signatures were obtained by HSI and analyzed using machine-learning methods. The detection results of HSI were compared with autofluorescence imaging and fluorescence imaging of two vital-dyes of the same specimens.Results: Quantitative HSI differentiated cancerous tissue from normal tissue in ex vivo surgical specimens with a sensitivity and specificity of 91% and 91%, respectively, and which was more accurate than autofluorescence imaging (P < 0.05) or fluorescence imaging of 2-NBDG (P < 0.05) and proflavine (P < 0.05). The proposed quantification tools also generated cancer probability maps with the tumor border demarcated and which could provide real-time guidance for surgeons regarding optimal tumor resection.Conclusions: This study highlights the feasibility of using quantitative HSI as a diagnostic tool to delineate the cancer boundaries in surgical specimens, and which could be translated into the clinic application with the hope of improving clinical outcomes in the future. Clin Cancer Res; 23(18); 5426–36. ©2017 AACR.",
+              summary:
+                "Hyperspectral imaging achieves 91% sensitivity and specificity in detecting head and neck cancer in surgical specimens, outperforming fluorescence methods and generating real-time tumor boundary maps for surgical guidance.",
+              keywords: [
+                "head and neck",
+                "cancer detection",
+                "non-invasive",
+                "diagnosis",
+              ],
+              link: "https://aacrjournals.org/clincancerres/article/23/18/5426/258658/Detection-of-Head-and-Neck-Cancer-in-Surgical"
+            },
+            {
+              title:
+                "Hyperspectral based discrimination of thyroid and parathyroid during surgery",
+              source: "Source: arvo journals",
+              description:
+                "Abstract:   Unintended injuring   of   anatomical   structures during    endocrine    neck    operations    can have    severe consequences for   patient.   Especially   the   nerves   and the parathyroid gland can be hard to identify visually. Therefore, intraoperative methods  are  needed  to support  the surgeon  in this  task.  Hyperspectral  imaging (HSI)  is a  new  approach in the   medical   area   which   combines a   camera   with   a spectrometer. It    showed    promising    results for    the discrimination of  tissue. In  this work,  HSI-data of  seven patients   were   acquired during   thyroid   and   parathyroid operations. The  mean  absorbance  spectra of  both glands showed differences in the range between 600 and 700 nm and at  760  and  960  nm.  This  means  that  thyroid  and  parathyroid have  different  oxygenation  states  and  different  contents of deoxygenated hemoglobin and water. Fromthese observations, it  is  possible  to  define  spectral  signatures to characterize both  glands. We  showed on  one  patient how spectral signatures can be used in classification algorithms to automatically identify the thyroid and parathyroid from other structures. Keywords: intraoperative imaging, gastrointestinal operation, patient data, spectral signature, classification algorithms. ",
+              summary:
+                "Hyperspectral imaging distinguishes thyroid and parathyroid tissues during surgery based on distinct spectral signatures related to oxygenation and hemoglobin/water content, potentially aiding surgical identification.",
+              keywords: [
+                "head and neck",
+                "cancer detection",
+                "non-invasive",
+                "diagnosis",
+              ],
+              link: "https://www.degruyterbrill.com/document/doi/10.1515/cdbme-2018-0095/html"
+            },
+          ],
+        },
+      };
+
+      let currentSearchTerm = "";
+      let currentFilter = "all";
+
+      // Tooltip functionality
+      function showTooltip(event, text) {
+        const tooltip = document.getElementById("tooltip");
+        tooltip.textContent = text;
+        tooltip.style.left = event.pageX + 10 + "px";
+        tooltip.style.top = event.pageY - 10 + "px";
+        tooltip.classList.add("show");
+      }
+
+      function hideTooltip() {
+        const tooltip = document.getElementById("tooltip");
+        tooltip.classList.remove("show");
+      }
+
+      // Search functionality
+      function performSearch() {
+        const searchTerm = document
+          .getElementById("searchBox")
+          .value.toLowerCase();
+        currentSearchTerm = searchTerm;
+        filterLiterature();
+      }
+
+      function clearSearch() {
+        document.getElementById("searchBox").value = "";
+        document.getElementById("regionFilter").value = "all";
+        currentSearchTerm = "";
+        currentFilter = "all";
+        filterLiterature();
+      }
+
+      function filterByRegion() {
+        const filter = document.getElementById("regionFilter").value;
+        currentFilter = filter;
+        filterLiterature();
+      }
+
+      function filterLiterature() {
+        const literatureList = document.getElementById("literatureList");
+        const searchResultsInfo = document.getElementById("searchResultsInfo");
+        literatureList.innerHTML = "";
+
+        let totalResults = 0;
+        let filteredData = {};
+
+        // Apply filters
+        Object.keys(literatureData).forEach((region) => {
+          if (currentFilter !== "all" && region !== currentFilter) {
+            return;
+          }
+
+          const category = literatureData[region];
+          const filteredPapers = category.papers.filter((paper) => {
+            if (!currentSearchTerm) return true;
+
+            const searchableText = (
+              paper.title +
+              " " +
+              paper.source +
+              " " +
+              paper.description +
+              " " +
+              (paper.summary || "") +
+              " " +
+              paper.keywords.join(" ")
+            ).toLowerCase();
+
+            return searchableText.includes(currentSearchTerm);
+          });
+
+          if (filteredPapers.length > 0) {
+            filteredData[region] = {
+              ...category,
+              papers: filteredPapers,
+            };
+            totalResults += filteredPapers.length;
+          }
+        });
+
+        // Display search results info
+        if (currentSearchTerm || currentFilter !== "all") {
+          searchResultsInfo.style.display = "block";
+          searchResultsInfo.innerHTML = `
+                    Found ${totalResults} papers
+                    ${
+                      currentSearchTerm
+                        ? ` matching "${currentSearchTerm}"`
+                        : ""
+                    }
+                    ${
+                      currentFilter !== "all"
+                        ? ` in ${
+                            literatureData[currentFilter]?.title ||
+                            currentFilter
+                          }`
+                        : ""
+                    }
+                `;
+        } else {
+          searchResultsInfo.style.display = "none";
+        }
+
+        // Display filtered results
+        if (Object.keys(filteredData).length === 0) {
+          literatureList.innerHTML =
+            '<div class="no-results">No papers found matching your criteria.</div>';
+          return;
+        }
+
+        Object.keys(filteredData).forEach((region) => {
+          const category = filteredData[region];
+          const categoryDiv = document.createElement("div");
+          categoryDiv.className = "anatomical-category";
+
+          const papersHTML = category.papers.map((paper) => `
+            <div class="paper-card">
+                <div class="paper-title">${highlightSearchTerm(paper.title)}</div>
+                <div class="paper-source">${paper.source}</div>
+                ${paper.description ? `<div class="paper-abstract">${highlightSearchTerm(paper.description)}</div>` : ''}
+                ${paper.summary ? `<div class="paper-summary">${highlightSearchTerm(paper.summary)}</div>` : ''}
+                <div style="margin-top: 8px;">
+                    <small style="color: #667eea; font-weight: bold;">Keywords: ${paper.keywords
+                      .map((k) => highlightSearchTerm(k))
+                      .join(", ")}</small>
+                </div>
+                ${paper.link ? `<a href="${paper.link}" class="paper-link" target="_blank">View Full Paper →</a>` : ''}
+            </div>
+          `).join("");
+
+          categoryDiv.innerHTML = `
+                    <div class="category-header" onclick="toggleCategory('${region}')">
+                        <span>${category.title} (${
+            category.papers.length
+          } papers)</span>
+                        <span class="expand-icon" id="icon-${region}">▼</span>
+                    </div>
+                    <div class="category-content active" id="content-${region}">
+                        ${papersHTML}
+                    </div>
+                `;
+
+          literatureList.appendChild(categoryDiv);
+        });
+      }
+
+      function highlightSearchTerm(text) {
+        if (!currentSearchTerm) return text;
+        const regex = new RegExp(`(${currentSearchTerm})`, "gi");
+        return text.replace(regex, '<span class="highlight">$1</span>');
+      }
+
+      // Initialize the literature display
+      function initializeLiterature() {
+        filterLiterature(); // Use the new filter function instead
+      }
+
+      // Toggle category visibility
+      function toggleCategory(region) {
+        const content = document.getElementById(`content-${region}`);
+        const icon = document.getElementById(`icon-${region}`);
+
+        content.classList.toggle("active");
+        icon.classList.toggle("rotated");
+      }
+
+      // Handle body part selection
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeLiterature();
+
+        const bodyParts = document.querySelectorAll(".body-part");
+        const selectedRegionDiv = document.getElementById("selectedRegion");
+
+        // Add hover tooltips to body parts
+        bodyParts.forEach((part) => {
+          const region = part.getAttribute("data-region");
+          const regionData = literatureData[region];
+
+          if (regionData) {
+            part.addEventListener("mouseenter", function (e) {
+              showTooltip(
+                e,
+                `${regionData.title} - ${regionData.papers.length} papers available`
+              );
+            });
+
+            part.addEventListener("mouseleave", hideTooltip);
+
+            part.addEventListener("mousemove", function (e) {
+              const tooltip = document.getElementById("tooltip");
+              tooltip.style.left = e.pageX + 10 + "px";
+              tooltip.style.top = e.pageY - 10 + "px";
+            });
+          }
+
+          part.addEventListener("click", function () {
+            // Remove previous selections
+            bodyParts.forEach((p) => p.classList.remove("selected"));
+
+            // Add selection to clicked part
+            this.classList.add("selected");
+            hideTooltip();
+
+            const region = this.getAttribute("data-region");
+            const regionData = literatureData[region];
+
+            if (regionData) {
+              selectedRegionDiv.style.display = "block";
+              selectedRegionDiv.innerHTML = `
+                            <strong>Selected: ${regionData.title}</strong><br>
+                            ${regionData.papers.length} research papers available
+                        `;
+
+              // Filter to show only this region
+              document.getElementById("regionFilter").value = region;
+              currentFilter = region;
+              filterLiterature();
+
+              // Scroll to literature section
+              document.querySelector(".literature-section").scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          });
+        });
+
+        // Add search functionality
+        document
+          .getElementById("searchBox")
+          .addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+              performSearch();
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
